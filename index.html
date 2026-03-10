@@ -1,0 +1,411 @@
+index.html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Comandas</title>
+    <style>
+        /* ESTILOS GENERALES */
+        :root {
+            --primary-blue: #0056b3;
+            --light-blue: #e3f2fd;
+            --white: #ffffff;
+            --text-dark: #333;
+            --gray: #f4f4f4;
+            --success: #28a745;
+            --warning: #ffc107;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--white);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 0;
+            padding-bottom: 100px; /* Espacio para el carrito fijo */
+        }
+
+        /* CABECERA Y TIPO DE PEDIDO */
+        header {
+            background-color: var(--primary-blue);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .order-type-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .order-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid white;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: 0.3s;
+        }
+
+        .order-btn.active {
+            background: white;
+            color: var(--primary-blue);
+            font-weight: bold;
+        }
+
+        .table-display-area {
+            margin-top: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            min-height: 24px;
+        }
+
+        .table-selector {
+            display: flex;
+            gap: 5px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+            margin-top: 5px;
+        }
+        .table-num {
+            width: 30px;
+            height: 30px;
+            background: rgba(255,255,255,0.3);
+            border: 1px solid white;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+        .table-num.active {
+            background: white;
+            color: var(--primary-blue);
+            font-weight: bold;
+        }
+
+        /* CONTENEDOR DE PÁGINAS */
+        .page {
+            display: none; /* Oculto por defecto */
+            padding: 15px;
+            max-width: 800px;
+            margin: 0 auto;
+            animation: fadeIn 0.3s;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* BOTONES DEL MENÚ PRINCIPAL */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .menu-btn {
+            background-color: var(--primary-blue);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            padding: 25px 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.1s;
+        }
+
+        .menu-btn:active { transform: scale(0.98); }
+        .menu-btn span { font-size: 3rem; margin-bottom: 10px; }
+
+        /* SECCIONES INTERNAS (PICAR, SALSA, ETC) */
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            margin-right: 15px;
+            color: var(--primary-blue);
+        }
+
+        .selection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .select-btn {
+            background-color: var(--white);
+            border: 2px solid var(--primary-blue);
+            color: var(--primary-blue);
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .select-btn.selected {
+            background-color: var(--primary-blue);
+            color: white;
+        }
+
+        /* INPUTS Y CANTIDADES */
+        .qty-input {
+            width: 60px;
+            padding: 5px;
+            margin-left: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        /* BARRA DE ACCIÓN (EDITAR / FINALIZAR) */
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+            gap: 10px;
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+            color: white;
+        }
+
+        .btn-finish { background-color: var(--success); }
+        .btn-edit { background-color: var(--warning); color: #333; }
+
+        /* CARRITO / LISTA FLOTANTE */
+        .cart-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            border-top: 4px solid var(--primary-blue);
+            padding: 15px;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
+            z-index: 200;
+        }
+
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .cart-items {
+            max-height: 120px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .cart-total {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-blue);
+            text-align: right;
+        }
+
+        .btn-clear {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        /* ESTILOS ESPECÍFICOS PARA CATEGORÍAS */
+        .category-tabs {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+        }
+        .cat-tab {
+            background: var(--gray);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .cat-tab.active {
+            background: var(--primary-blue);
+            color: white;
+        }
+        .flavor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        .flavor-btn {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .flavor-btn:hover { background: var(--light-blue); }
+
+    </style>
+</head>
+<body>
+
+    <!-- CABECERA -->
+    <header>
+        <div>COMANDA ACTIVA</div>
+        <div class="order-type-selector">
+            <button class="order-btn active" id="btnAqui" onclick="setOrderType('aqui')">PARA ACÁ</button>
+            <button class="order-btn" id="btnEnvio" onclick="setOrderType('envio')">PARA ENVÍO</button>
+        </div>
+        <div id="tableDisplay" class="table-display-area">Mesa: --</div>
+        <div class="table-selector" id="tableSelector">
+            <!-- Se llena con JS -->
+        </div>
+    </header>
+
+    <!-- PÁGINA 1: MENÚ PRINCIPAL -->
+    <div id="page-main" class="page active">
+        <h2 style="text-align: center; margin-top: 20px;">Menú Principal</h2>
+        <div class="menu-grid">
+            <button class="menu-btn" onclick="goToPage('page-picar')">
+                <span>🍟</span> Para Picar
+            </button>
+            <button class="menu-btn" onclick="goToPage('page-salsas')">
+                <span>🥫</span> Salsas
+            </button>
+            <button class="menu-btn" onclick="goToPage('page-empanadas')">
+                <span>🥟</span> Empanadas
+            </button>
+            <button class="menu-btn" onclick="goToPage('page-bebidas')">
+                <span>🥤</span> Bebidas
+            </button>
+            <button class="menu-btn" onclick="goToPage('page-infantil')">
+                <span>👶</span> Menú Infantil
+            </button>
+            <button class="menu-btn" onclick="goToPage('page-rolitos')">
+                <span>🌯</span> Rolitos
+            </button>
+            <button class="menu-btn" onclick="goToPage('page-lehm')">
+                <span>🍝</span> Lehmenyún
+            </button>
+            <button class="menu-btn" onclick="goToPage('page-porciones')">
+                <span>🍖</span> Porciones
+            </button>
+        </div>
+    </div>
+
+    <!-- PÁGINA 2: PARA PICAR -->
+    <div id="page-picar" class="page">
+        <div class="section-header">
+            <button class="back-btn" onclick="goToPage('page-main')">⬅</button>
+            <h2>Para Picar</h2>
+        </div>
+
+        <!-- Paso 1: Elegir tamaño -->
+        <div id="picar-step1">
+            <p>Selecciona la cantidad:</p>
+            <div class="selection-grid">
+                <button class="select-btn" onclick="selectPicanSize(2, 750)">Pican 2 ($750)</button>
+                <button class="select-btn" onclick="selectPicanSize(4, 940)">Pican 4 ($940)</button>
+                <button class="select-btn" onclick="selectPicanSize(6, 1130)">Pican 6 ($1130)</button>
+                <button class="select-btn" onclick="selectPicanSize(8, 1290)">Pican 8 ($1290)</button>
+            </div>
+        </div>
+
+        <!-- Paso 2: Elegir complemento (Oculto al inicio) -->
+        <div id="picar-step2" style="display:none;">
+            <p>Elige el complemento:</p>
+            <div class="selection-grid">
+                <button class="select-btn" onclick="addPicanItem('Papas bastón')">Papas bastón</button>
+                <button class="select-btn" onclick="addPicanItem('Papas españolas')">Papas españolas</button>
+                <button class="select-btn" onclick="addPicanItem('Papas rústicas')">Papas rústicas</button>
+                <button class="select-btn" onclick="addPicanItem('Nuggets pollo')">Nuggets pollo</button>
+                <button class="select-btn" onclick="addPicanItem('Nuggets brócoli')">Nuggets brócoli</button>
+                <button class="select-btn" onclick="addPicanItem('Bastones muzzarella')">Bastones muzzarella</button>
+                <button class="select-btn" onclick="addPicanItem('Bastones boniato')">Bastones boniato</button>
+                <button class="select-btn" onclick="addPicanItem('Aros cebolla')">Aros cebolla</button>
+                <button class="select-btn" onclick="addPicanItem('Arrolladitos')">Arrolladitos</button>
+                <button class="select-btn" onclick="addPicanItem('Aceitunas')">Aceitunas</button>
+                <button class="select-btn" onclick="addPicanItem('Croquetas JyQ')">Croquetas JyQ</button>
+                <button class="select-btn" onclick="addPicanItem('Croquetas EyQ')">Croquetas EyQ</button>
+                <button class="select-btn" onclick="addPicanItem('Empanadas JyQ x2')">Empanadas JyQ x2</button>
+                <button class="select-btn" onclick="addPicanItem('Empanadas Carne x2')">Empanadas Carne x2</button>
+                <button class="select-btn" onclick="addPicanItem('Sticks verdura')">Sticks verdura</button>
+            </div>
+        </div>
+
+        <div class="action-bar">
+            <button class="btn-action btn-edit" onclick="resetPicar()">Editar / Cancelar</button>
+            <button class="btn-action btn-finish" onclick="finishPicar()">Finalizar</button>
+        </div>
+    </div>
+
+    <!-- PÁGINA 3: SALSAS -->
+    <div id="page-salsas" class="page">
+        <div class="section-header">
+            <button class="back-btn" onclick="goToPage('page-main')">⬅</button>
+            <h2>Salsas</h2>
+        </div>
+        <div class="selection-grid">
+            <button class="select-btn" onclick="addSalsa('Salsa Picante')">🌶️ Picante</button>
+            <button class="select-btn" onclick="addSalsa('BBQ')">🍖 BBQ</button>
+            <button class="select-btn" onclick="addSalsa('Ketchup')">🍅 Ketchup</button>
+            <button class="select-btn" onclick="addSalsa('Mayonesa')">🥚 Mayonesa</button>
+            <button class="select-btn" onclick="addSalsa('Salsa Ajo')">🧄 Ajo</button>
+            <button class="select-btn" onclick="addSalsa('Salsa Soja')">🥢 Soja</button>
+            <button class="select-btn" onclick="addSalsa('Cheddar')">🧀 Cheddar</button>
+        </div>
+        <div class="action-bar">
+            <button class="btn-action btn-edit" onclick="reset
